@@ -6,7 +6,7 @@ public class RESPUtils {
 
 
     public static void sendBulkString(OutputStream out,String value) throws IOException {
-        if(value.equals(""))
+        if(value == null)
         {
            out.write("$-1\r\n".getBytes());
         }else{
@@ -22,4 +22,8 @@ public class RESPUtils {
             sendBulkString(out,val);
         }
     }
+    public static void sendNullArray(OutputStream out) throws IOException {
+        out.write("*-1\r\n".getBytes());
+    }
+
 }

@@ -35,7 +35,7 @@ public class ClientHandler  extends Thread {
                 char  ch = (char)in.read();
                 if(ch != '*')
                 {
-                    out.write("-ERR Protocal erorr\r\n".getBytes());
+                    out.write("-ERR Protocol erorr\r\n".getBytes());
                     continue;
                 }
                 List<String> command = readCommand(in);
@@ -48,7 +48,7 @@ public class ClientHandler  extends Thread {
                         RESPUtils.sendBulkString(out,(command.size() >1)?command.get(1) : "");
                         break;
                     case "PING":
-                        out.write("PONG\r\n".getBytes());
+                        RESPUtils.sendBulkString(out,"PONG");
                         break;
                     case "SET":
                         RedisCommands.handleSet(command,out,map,expiryMap);
@@ -66,9 +66,16 @@ public class ClientHandler  extends Thread {
                         RedisCommands.handleLLen(command,out,listMap);
                         break;
                     case "LRANGE":
-                        RedisCommands.hanleLange(command,out,listMap);
+                        RedisCommands.handleLange(command,out,listMap);
+                        break;
+                    case "LPOP":
+                        RedisCommands.handleLPOP(command,out,listMap);
+                        break;
+                    case "BLPOP":
+                        RedisCommands.handleBLPOP(command,out,listMap);
+                        break;
                     default:
-                        out.write("-ERR unknowm command".getBytes());
+                        out.write("-ERR unknowm command\r\n".getBytes());
                         break;
                 }
             }
