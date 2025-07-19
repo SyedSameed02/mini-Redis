@@ -1,9 +1,6 @@
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class RedisCommands {
     public static void handleSet(List<String> command, OutputStream out, Map<String, String> map, Map<String, Long> expiryMap) throws IOException {
@@ -72,4 +69,36 @@ public class RedisCommands {
 
         out.write((":"+size + "\r\n").getBytes());
     }
+
+    public static void hanleLange(List<String> command, OutputStream out, Map<String, Deque<String>> listMap) throws IOException {
+
+            String key = command.get(1);
+            int start = Integer.parseInt(command.get(2));
+            int end = Integer.parseInt(command.get(3));
+
+            Deque<String> deque =  listMap.getOrDefault(key,new LinkedList<>());
+
+            List<String> list = new ArrayList<>(deque);
+
+            int size = list.size();
+
+            if (start < 0) start+=size;
+            if(end < 0) end += size;
+
+            start = Math.max(0,start);
+            end = Math.min(end,size-1);
+
+            List<String> subList = (start > end) ?new ArrayList<>() : list.subList(start,end+1);
+
+            StringBuilder sb=  new StringBuilder("*" +subList.size()+"\r\n");
+            for(String s : subList)
+            {
+                sb.append("$").append(s.length()).append("\r\n").append(s).append("\r\n");
+            }
+
+           out.write(sb.toString().getBytes());
+
+    }
+
+
 }

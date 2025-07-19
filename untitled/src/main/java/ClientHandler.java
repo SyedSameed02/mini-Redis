@@ -58,6 +58,15 @@ public class ClientHandler  extends Thread {
                         break;
                     case "RPUSH":
                         RedisCommands.handleRPUSH(command,out,listMap);
+                        break;
+                    case "LPUSH":
+                        RedisCommands.handleLPUSH(command,out,listMap);
+                        break;
+                    case "LLEN":
+                        RedisCommands.handleLLen(command,out,listMap);
+                        break;
+                    case "LRANGE":
+                        RedisCommands.hanleLange(command,out,listMap);
                     default:
                         out.write("-ERR unknowm command".getBytes());
                         break;
