@@ -1,119 +1,82 @@
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Deque;
+
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+
+import java.util.Scanner;
+
+
+public  class ClientHandler implements Runnable
+{
+        Socket socket;
 
 
 
-public class ClientHandler  extends Thread {
+        public ClientHandler(Socket socket)
+        {
+            this.socket = socket;
 
-    private final Socket socket;
+        }
 
-    private static final Map<String,String> map = new ConcurrentHashMap<>();
-    private static final Map<String,Long> expiryMap =  new ConcurrentHashMap<>();
-    private Map<String, Deque<String>> listMap = new ConcurrentHashMap<>();
-
-    public ClientHandler(Socket clientSocket) {
-        this.socket = clientSocket;
-    }
+        public void run()
+        {
 
 
-    public void run() {
 
-        try(
-                InputStream in =socket.getInputStream();
-                OutputStream out =socket.getOutputStream();
-        ) {
 
-            while(true)
+
+            try(
+                    OutputStream out =  socket.getOutputStream();
+                    InputStream in = socket.getInputStream();
+                )
             {
-                char  ch = (char)in.read();
-                if(ch != '*')
-                {
-                    out.write("-ERR Protocol erorr\r\n".getBytes());
-                    continue;
-                }
-                List<String> command = readCommand(in);
-                String cmd = command.get(0).toUpperCase();
 
+
+
+                List<String> commands = RESPUtils.parseArray(in);
+                String cmd = commands.get(0);
 
                 switch (cmd)
                 {
-                    case "ECHO":
-                        RESPUtils.sendBulkString(out,(command.size() >1)?command.get(1) : "");
-                        break;
                     case "PING":
-                        RESPUtils.sendBulkString(out,"PONG");
+                        out.write("PONG\r\n".getBytes());
                         break;
+
                     case "SET":
-                        RedisCommands.handleSet(command,out,map,expiryMap);
+                        RedisCommands.handleSET(out,commands);
                         break;
+
                     case "GET":
-                        RedisCommands.handleGet(command,out,map,expiryMap);
+                        RedisCommands.handleGET(out,commands);
                         break;
                     case "RPUSH":
-                        RedisCommands.handleRPUSH(command,out,listMap);
-                        break;
                     case "LPUSH":
-                        RedisCommands.handleLPUSH(command,out,listMap);
-                        break;
-                    case "LLEN":
-                        RedisCommands.handleLLen(command,out,listMap);
+                        RedisCommands.handlePush(out,commands);
                         break;
                     case "LRANGE":
-                        RedisCommands.handleLange(command,out,listMap);
+                        RedisCommands.handleLRANGE(out,commands);
                         break;
                     case "LPOP":
-                        RedisCommands.handleLPOP(command,out,listMap);
+                        RedisCommands.handleLPOP(out,commands);
                         break;
                     case "BLPOP":
-                        RedisCommands.handleBLPOP(command,out,listMap);
+                        RedisCommands.handleBLPOP(out,commands);
                         break;
+
+
+
+
+
                     default:
-                        out.write("-ERR unknowm command\r\n".getBytes());
-                        break;
+                        out.write("-ERR in command\r\n".getBytes());
                 }
+
+
+
+
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-
-
-        } catch (IOException e) {
-            System.err.println("Client thread error: " + e.getMessage());
         }
-
-    }
-
-    private List<String> readCommand(InputStream in) throws IOException {
-        List<String> command = new ArrayList<>();
-        int count = readInt(in);
-
-        for(int i =0;i<count;i++)
-        {
-            in.read();
-            int len = readInt(in);
-            byte[] buf = new byte[len];
-            in.read(buf);
-            command.add(new String(buf));
-            in.read();in.read();
-        }
-        return command;
-    }
-
-    private int readInt(InputStream in) throws IOException {
-
-        int result =0;
-        char ch;
-        while((ch = (char) in.read()) != '\r')
-        {
-            result = result *10+ (ch-'0');
-        }
-        in.read();
-        return  result;
-    }
-
-
 }
