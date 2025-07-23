@@ -152,6 +152,41 @@ class RedisCommands
         }
     }
 
+    public static void handleType(OutputStream out,List<String> cmd)
+    {
+        //need to implement
+    }
+    public static void handleLMOVE(OutputStream out,List<String> cmd) throws IOException {
+
+            if(cmd.size() <5){RESPUtils.sendBulkString(out,null);return;}
+            String key = cmd.get(1);
+            String target = cmd.get(2);
+            BlockingDeque<String> deque = RESPUtils.listMap.get(key);
+            BlockingDeque<String> destin = RESPUtils.listMap.computeIfAbsent(key, k -> new LinkedBlockingDeque<>());
+            if(deque == null || deque.isEmpty())
+            {
+                RESPUtils.sendBulkString(out,null);return;
+            }
+
+
+            String pullDir = cmd.get(3);
+            String pushDir = cmd.get(4);
+
+            String val1 = (pullDir.equals("LEFT")) ? deque.pollFirst() : deque.poll();
+
+        assert val1 != null;
+        if ((pushDir.equals("RIGHT"))) {
+
+            destin.offerLast(val1);
+        } else {
+            destin.offerFirst(val1);
+        }
+
+        RESPUtils.sendBulkString(out,val1);
+
+
+    }
+
 
 
 
